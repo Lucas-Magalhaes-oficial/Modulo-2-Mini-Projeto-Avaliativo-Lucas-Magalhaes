@@ -156,6 +156,7 @@ psql -U postgres -d postgres -f sql/01-carga-staging.sql
 psql -U postgres -d dw_pata_amiga -f sql/02-dimensoes-prontas.sql
 psql -U postgres -d dw_pata_amiga -f sql/03-dimensoes.sql
 psql -U postgres -d dw_pata_amiga -f sql/04-fato.sql
+psql -U postgres -d dw_pata_amiga -f sql/05-perguntas.sql
 ```
 
 No pgAdmin: crie o banco `dw_pata_amiga` primeiro, depois rode cada arquivo
