@@ -94,6 +94,59 @@ fato.
 | Marcos em branco — Despacho | 1.665 |
 | Marcos em branco — Entrega | 1.953 |
 
+## 4. Decisões de tratamento
+
+- **Máscara de data**: a data do pedido usa o formato americano
+  (`MM/DD/YYYY HH12:MI AM`, via `TO_TIMESTAMP`), enquanto os quatro marcos do
+  processo de entrega já vêm em ISO (`YYYY-MM-DD`), então usam só `::date`.
+  Usar a máscara brasileira na data do pedido causa erro do PostgreSQL nas
+  datas com mês maior que 12.
+- **Regra dos números**: valores vazios ou `'-'` sempre viram `NULL`, nunca
+  `0` — inclusive nos quatro intervalos de dias, para não fazer parecer que
+  uma etapa não cumprida "aconteceu em zero dias".
+- **De-para de categoria**: a ordem do `CASE` importa — `MED` é testado
+  antes de `RA`, senão "Ração Medicamentosa" cairia em "Ração" ao invés de
+  "Medicamento". Todo o teste é feito sem acento (via `TRANSLATE`) e em
+  caixa alta, para não depender da grafia exata de origem.
+- **De-para de canal**: mesma lógica — `WHATS` é testado antes de `APP`,
+  senão os pedidos de WhatsApp cairiam dentro de "App" (já que a palavra
+  "App" está contida em "WhatsApp").
+- **Padronização do nome da loja**: primeiro um `REPLACE` remove o sufixo
+  "/SC" e espaços duplos; depois normalizo acento e caixa com
+  `UPPER(TRANSLATE(...))`. Restam 3 grafias que exigem tratamento manual via
+  `CASE` (não resolvidas por regra geral): um erro de digitação
+  ("Blumenal" → "Blumenau"), um apelido ("Floripa" → "Florianópolis") e uma
+  abreviação ("Jgua do Sul" → "Jaraguá do Sul").
+  - **Correção técnica importante**: a lista de caracteres do `TRANSLATE`
+    precisa cobrir tanto acentos maiúsculos quanto minúsculos
+    (`ÁÀÂÃÉÊÍÓÔÕÚÜÇáàâãéêíóôõúüç`). Usar só as maiúsculas causava falha
+    silenciosa: nomes de cidade com acento em minúscula (ex:
+    "Florianópolis") não eram normalizados corretamente por dependerem de
+    `UPPER()` fazer o *case-folding* de caracteres acentuados — o que nem
+    sempre acontece dependendo da configuração de locale do banco. Esse bug
+    fazia 264 pedidos caírem incorretamente na loja "Não Informado" em vez
+    de apenas 3 (o valor correto, conferido no `00-conferencia.sql`).
+- **Loja pelo Cod Loja OU pelo nome**: como 39% dos pedidos não têm
+  `Cod Loja` preenchido, a fato tenta primeiro o `Cod Loja` (chave exata) e,
+  se não achar, cai para o nome padronizado. Se nenhum dos dois resolver,
+  vai para a linha -1.
+- **Categoria pela grafia crua**: a `dim_categoria` guarda a grafia
+  original em `categoria_origem`; a fato encontra a linha com um JOIN de
+  uma coluna só, sem precisar reaplicar o CASE de classificação.
+- **Toda dimensão tem a linha -1** ("Não Informado"), inserida antes do
+  `INSERT ... SELECT`, para nenhuma FK da fato ficar nula.
+
+## 5. Modelo dimensional
+
+![Modelo dimensional Pata Amiga](img/modelo-dimensional-pata-amiga.png)
+
+O modelo segue o esquema estrela: `fato_pedido` no grão de uma linha por
+pedido (4.044 linhas), ligado a 4 dimensões. A `dim_tempo` é usada duas
+vezes (role-playing dimension): uma para a data do pedido, outra para a
+data da entrega. A `dim_praca` não se liga direto à fato — o caminho é
+indireto, através da `bridge_loja_praca`, já que uma loja pode atender mais
+de uma praça (relação N:N) com um fator de rateio.
+
 ## 6. Como reproduzir o banco do zero
 
 Conectado como `postgres`, rode os scripts na ordem:
