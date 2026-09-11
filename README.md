@@ -266,3 +266,8 @@ sem corrigir a etapa Nota→Despacho tende a reproduzir o mesmo problema.
 - **257 pedidos** sem quantidade de itens e **121** sem valor líquido
   registrado ficaram como NULL e não entram nas somas de faturamento nem de
   itens vendidos.
+
+
+##
+## link do video
+## https://drive.google.com/file/d/1LWbACk1wLypjAEfPxq4eEq-icrCpTHdV/view?usp=sharing
