@@ -138,7 +138,7 @@ fato.
 
 ## 5. Modelo dimensional
 
-![Modelo dimensional Pata Amiga](img/modelo-dimensional-pata-amiga.png)
+![Modelo dimensional Pata Amiga](IMG/modelo-dimensional-pata-amiga.png)
 
 O modelo segue o esquema estrela: `fato_pedido` no grão de uma linha por
 pedido (4.044 linhas), ligado a 4 dimensões. A `dim_tempo` é usada duas
