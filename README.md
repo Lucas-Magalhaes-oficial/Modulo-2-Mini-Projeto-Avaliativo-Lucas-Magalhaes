@@ -108,3 +108,107 @@ psql -U postgres -d dw_pata_amiga -f sql/04-fato.sql
 No pgAdmin: crie o banco `dw_pata_amiga` primeiro, depois rode cada arquivo
 numa Query Tool conectada a ele (sem as linhas `DROP DATABASE`,
 `CREATE DATABASE` e `\c`, que são comandos exclusivos do terminal `psql`).
+
+## 7. As cinco respostas de negócio
+
+**P1 — Onde está o gargalo da entrega?**
+
+| Porte | Integração→Separação | Separação→Nota | Nota→Despacho | Despacho→Entrega | Total até entrega |
+|---|---|---|---|---|---|
+| Grande | 2,0 dias | 0,6 dias | 3,3 dias | 2,0 dias | 7,9 dias |
+| Média | 2,0 dias | 0,6 dias | 3,3 dias | 2,0 dias | 8,0 dias |
+| Pequena | 3,0 dias | 0,7 dias | **8,5 dias** | 2,9 dias | **15,2 dias** |
+| Rede (geral) | 2,1 dias | 0,6 dias | 4,1 dias | 2,1 dias | 9,0 dias |
+
+O gargalo **não é o mesmo em todos os portes**. Nas lojas Grandes e Médias, a
+etapa mais lenta é Nota→Despacho (~3,3 dias), mas dentro de um total
+saudável (~8 dias). Nas lojas Pequenas, essa mesma etapa quase triplica
+(8,5 dias), levando o processo inteiro a durar quase o dobro do resto da
+rede (15,2 dias). O gargalo da rede está concentrado nas lojas Pequenas, na
+etapa entre a nota fiscal e o despacho para a transportadora.
+
+**P2 — Qual categoria concentra o faturamento?**
+
+| Categoria | % do faturamento |
+|---|---|
+| Ração | 60,01% |
+| Medicamento | 17,06% |
+| Petisco | 7,17% |
+| Serviço | 5,24% |
+| Higiene | 5,15% |
+| Acessório | 3,61% |
+| Brinquedo | 1,76% |
+
+Ração sozinha responde por 60% de tudo que a rede fatura — a categoria
+campeã é a mesma em qualquer porte de loja, já que é o item de reposição
+recorrente do negócio.
+
+**P3 — O desconto funciona igual em todo canal?**
+
+| Canal | Ticket médio COM desconto | Ticket médio SEM desconto | % do faturamento |
+|---|---|---|---|
+| App | R$ 488,04 | R$ 170,48 | 30,79% |
+| Loja Física | R$ 494,04 | R$ 196,78 | 20,11% |
+| Site | R$ 501,92 | R$ 189,48 | 25,13% |
+| Telefone | R$ 514,02 | R$ 195,46 | 6,88% |
+| WhatsApp | R$ 514,33 | R$ 173,88 | 10,52% |
+
+Não é a mesma política em todo canal, mas o padrão se repete: em **todos**
+os canais o ticket médio com desconto é de 2,5 a quase 3 vezes maior que
+sem desconto. Isso sugere que o desconto está associado a compras maiores
+(reposição em volume), não a promoções pontuais de baixo valor — o efeito é
+consistente, mas a magnitude do ticket varia por canal (App tem o menor
+ticket sem desconto, R$170,48).
+
+**P4 — Qual praça de atendimento concentra o faturamento?**
+
+| Praça | % do faturamento |
+|---|---|
+| Vale do Itajaí | 35,34% |
+| Grande Florianópolis | 15,81% |
+| Norte Industrial | 9,78% |
+| Litoral Sul | 7,64% |
+| Litoral Norte | 7,19% |
+| Extremo Oeste | 5,48% |
+| Carbonífera | 4,95% |
+| Serra Catarinense | 4,49% |
+| Meio-Oeste | 3,29% |
+| Foz do Itajaí | 2,61% |
+| Planalto Norte | 1,73% |
+| Planalto Serrano | 1,64% |
+
+O Vale do Itajaí concentra sozinho mais de um terço do faturamento da rede,
+seguido de longe pela Grande Florianópolis.
+
+**P5 — Onde abrir a próxima loja, e o que os dados não permitem afirmar?**
+
+As lojas com mais itens vendidos por mil habitantes são todas de porte
+**Pequena** (Rio dos Cedros, Presidente Getúlio, Ibirama...), o que indica
+mercados menores mas proporcionalmente bem atendidos. Só que essas mesmas
+lojas têm o pior tempo médio de entrega da rede (14 a 16 dias, contra ~8
+dias nas médias/grandes) — o mesmo gargalo identificado na P1.
+
+Por faixa de franquia (foto atual): Ouro concentra 56,39% do faturamento,
+Diamante 21,31%, Prata 17,55%, Bronze 4,69%.
+
+**Recomendação**: antes de abrir uma loja nova, o dado sugere resolver o
+gargalo logístico das lojas Pequenas — elas já têm demanda proporcional
+alta, mas a operação não escala bem nesse porte. Abrir mais uma loja Pequena
+sem corrigir a etapa Nota→Despacho tende a reproduzir o mesmo problema.
+
+## 8. O que os dados não permitem afirmar
+
+- **Faixa de franquia histórica**: o cadastro de lojas guarda só a
+  classificação (Bronze/Prata/Ouro/Diamante) **atual**, não a que a loja
+  tinha na data de cada pedido. Por isso a P5 não responde "quanto do
+  faturamento veio de lojas que já eram Ouro na época do pedido" — o
+  passado foi sobrescrito pelo cadastro de hoje.
+- **3 pedidos** não têm loja identificada (nem código, nem nome) e caem na
+  linha "Não Informado" — não entram em nenhuma métrica por loja/praça.
+- **1.953 pedidos** (quase metade) ainda não tiveram entrega concluída
+  dentro da janela de dados — o tempo médio de entrega (P1) é calculado só
+  sobre quem já foi entregue, o que pode subestimar o tempo real se os
+  pedidos mais lentos forem justamente os que ainda não fecharam.
+- **257 pedidos** sem quantidade de itens e **121** sem valor líquido
+  registrado ficaram como NULL e não entram nas somas de faturamento nem de
+  itens vendidos.
